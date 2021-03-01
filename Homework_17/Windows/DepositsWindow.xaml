@@ -1,0 +1,46 @@
+﻿<Window x:Class="Homework_17.Windows.DepositsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Homework_17.Windows"
+        mc:Ignorable="d"
+        Height="208.79" Width="592.94">
+    <Grid>
+        <DataGrid x:Name="DepositsGrid"
+                  IsSynchronizedWithCurrentItem="True"
+                  SelectionMode="Single"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="false"
+                  ColumnWidth="*"
+                  ItemsSource="{Binding}"
+                  IsReadOnly="False"
+                  CurrentCellChanged="DepositsGrid_OnCurrentCellChanged"
+                  CellEditEnding="DepositsGrid_OnCellEditEnding"
+        >
+            <DataGrid.Columns>
+                <DataGridTextColumn x:Name="Id"
+                                    Binding="{Binding DepositId}"
+                                    Header="Deposit Id"/>
+                <DataGridTextColumn x:Name="ClientId"
+                                    Binding="{Binding ClientId}"
+                                    Header="Client Id"/>
+                <DataGridTextColumn x:Name="Name"
+                                    Binding="{Binding Name}"
+                                    Header="Client name"/>
+                <DataGridTextColumn x:Name="Capitalization"
+                                    Binding="{Binding Capitalization}"
+                                    Header="Capitalization"/>
+                <DataGridTextColumn x:Name="Sum"
+                                    Binding="{Binding Sum}"
+                                    Header="Cash"/>
+                <DataGridTextColumn x:Name="CreditPercent"
+                                    Binding="{Binding Rate}"
+                                    Header="Rate"/>
+                <DataGridTextColumn x:Name="AllDeposits"
+                                    Binding="{Binding Period}"
+                                    Header="Period"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>

@@ -1,0 +1,151 @@
+﻿<Window x:Class="Homework_17.Windows.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Homework_17"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="447.223" Width="885.31">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="287*"/>
+            <ColumnDefinition Width="805*"/>
+            <ColumnDefinition Width="2*"/>
+        </Grid.ColumnDefinitions>
+        <TabControl HorizontalAlignment="Stretch" Margin="6,0,0,15" VerticalAlignment="Stretch" Grid.Column="1">
+            <TabItem x:Name="PhysicalTabItem" Header="{Binding BankObj.PhysicalPersonsDepartment.Name}" ScrollViewer.CanContentScroll="True">
+                <TabItem.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Open deposit" Click="OpenDepositButtonBase_OnClick"></MenuItem>
+                        <MenuItem Header="Issue credit" Click="IssueCreditButtonBase_OnClick"></MenuItem>
+                        <MenuItem Header="Transfer money" Click="TransferMoneyButtonBase_OnClick"></MenuItem>
+                        <MenuItem Header="Remove client" Click="RemoveClientButton_OnClick"></MenuItem>
+                        <MenuItem Header="Add new client" Click="AddNewClientButtonBase_OnClick"></MenuItem>
+                        <MenuItem Header="Show all credits" Click="ShowAllCreditsMenuItem_OnClick"></MenuItem>
+                        <MenuItem Header="Show all deposits" Click="ShowAllDepositsMenuItem_OnClick"></MenuItem>
+                    </ContextMenu>
+                </TabItem.ContextMenu>
+                <Grid Background="#FFE5E5E5" Margin="0,0,0,-2">
+                    <!--<DataGrid
+                        x:Name="PhysicalPersonsDataGrid"
+                        IsReadOnly="False"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        ItemsSource="{Binding BankObj.PhysicalPersonsDepartment.Clients}" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
+                    </DataGrid>-->
+                    <DataGrid x:Name="PhysicalPersonsDataGrid"
+                              IsSynchronizedWithCurrentItem="True"
+                              SelectionMode="Single"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="false"
+                              ColumnWidth="*"
+                              ItemsSource="{Binding}"
+                              IsReadOnly="False"
+                              CurrentCellChanged="PhysicalPersonsDataGrid_OnCurrentCellChanged"
+                              CellEditEnding="PhysicalPersonsDataGrid_OnCellEditEnding"
+                              >
+                        <DataGrid.Columns>
+                            <DataGridTextColumn x:Name="Id"
+                                                Binding="{Binding Id}"
+                                                Header="Client ID"/>
+                            <DataGridTextColumn x:Name="Vip"
+                                                Binding="{Binding Vip}"
+                                                Header="VIP status"/>
+                            <DataGridTextColumn x:Name="Name"
+                                                Binding="{Binding Name}"
+                                                Header="Client name"/>
+                            <DataGridTextColumn x:Name="Sum"
+                                                Binding="{Binding Sum}"
+                                                Header="Cash"/>
+                            <DataGridTextColumn x:Name="DepositPercent"
+                                                Binding="{Binding DepositPercent}"
+                                                Header="Deposit rate"/>
+                            <DataGridTextColumn x:Name="CreditPercent"
+                                                Binding="{Binding CreditPercent}"
+                                                Header="Credit rate"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="LegalTabItem" Header="{Binding BankObj.LegalPersonsDepartment.Name}">
+                <TabItem.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Open deposit" Click="OpenDepositButtonBase_OnClick"></MenuItem>
+                        <MenuItem Header="Issue credit" Click="IssueCreditButtonBase_OnClick"></MenuItem>
+                        <MenuItem Header="Transfer money" Click="TransferMoneyButtonBase_OnClick"></MenuItem>
+                        <MenuItem Header="Remove client" Click="RemoveClientButton_OnClick"></MenuItem>
+                        <MenuItem Header="Add new client" Click="AddNewClientButtonBase_OnClick"></MenuItem>
+                        <MenuItem Header="Show all credits" Click="ShowAllCreditsMenuItem_OnClick"></MenuItem>
+                        <MenuItem Header="Show all deposits" Click="ShowAllDepositsMenuItem_OnClick"></MenuItem>
+                    </ContextMenu>
+                </TabItem.ContextMenu>
+                <Grid Background="#FFE5E5E5" Margin="0,0,-1,-1">
+                    <!--<DataGrid
+                        x:Name="LegalPersonsDataGrid"
+                        IsReadOnly="False"
+                        Grid.ColumnSpan="2"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        ItemsSource="{Binding BankObj.LegalPersonsDepartment.Clients}">
+                    </DataGrid>-->
+                    <DataGrid x:Name="LegalPersonsDataGrid"
+                              IsSynchronizedWithCurrentItem="True"
+                              SelectionMode="Single"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="false"
+                              ColumnWidth="*"
+                              ItemsSource="{Binding}"
+                              IsReadOnly="False"
+                              CurrentCellChanged="LegalPersonsDataGrid_OnCurrentCellChanged"
+                              CellEditEnding="LegalPersonsDataGrid_OnCellEditEnding"
+                              >
+                        <DataGrid.Columns>
+                            <DataGridTextColumn x:Name="LegalPersonsDepartmentId"
+                                                Binding="{Binding Id}"
+                                                Header="Client ID"/>
+                            <DataGridTextColumn x:Name="LegalPersonsDepartmentVip"
+                                                Binding="{Binding Vip}"
+                                                Header="VIP status"/>
+                            <DataGridTextColumn x:Name="LegalPersonsDepartmentName"
+                                                Binding="{Binding Name}"
+                                                Header="Client name"/>
+                            <DataGridTextColumn x:Name="LegalPersonsDepartmentSum"
+                                                Binding="{Binding Sum}"
+                                                Header="Cash"/>
+                            <DataGridTextColumn x:Name="LegalPersonsDepartmentDepositPercent"
+                                                Binding="{Binding DepositPercent}"
+                                                Header="Deposit rate"/>
+                            <DataGridTextColumn x:Name="LegalPersonsDepartmentCreditPercent"
+                                                Binding="{Binding CreditPercent}"
+                                                Header="Credit rate"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <ScrollViewer Margin="0,57,0,0">
+            <TextBlock x:Name="LogsTextBlock" HorizontalAlignment="Stretch" TextWrapping="Wrap"  VerticalAlignment="Stretch" Background="{DynamicResource {x:Static SystemColors.InactiveBorderBrushKey}}" Margin="3"><Run Text="Logs"/></TextBlock>
+        </ScrollViewer>
+        <Label Content="Total clients count:" HorizontalAlignment="Left" Margin="0,30,0,0" VerticalAlignment="Top" Width="124"/>
+        <TextBlock x:Name="ClientsCountTextBlock" HorizontalAlignment="Left" Margin="113,35,0,0" TextWrapping="Wrap" Text="{Binding BankObj.ClientsCount}" VerticalAlignment="Top" Height="26" Width="56"/>
+        <Menu HorizontalAlignment="Left" Height="30" VerticalAlignment="Top" Width="190" Background="{DynamicResource {x:Static SystemColors.GradientInactiveCaptionBrushKey}}">
+            <MenuItem Header="File" Height="30" Width="45" Background="{DynamicResource {x:Static SystemColors.ActiveCaptionBrushKey}}" FontSize="16" BorderBrush="Transparent">
+                <MenuItem Header="Import data" Click="LoadCompanyStructButton_OnClick"></MenuItem>
+                <MenuItem Header="Import data from work directory" Click="LoadDataFromFiles_OnClick"></MenuItem>
+                <MenuItem Header="Generate data" Click="GenerateDataButton_OnClick"></MenuItem>
+                <MenuItem Header="Save data" Click="SaveCompanyStructButton_OnClick"></MenuItem>
+                <MenuItem Header="Exit" Click="MenuItemExit_OnClick"></MenuItem>
+            </MenuItem>
+            <MenuItem Header="Operations" Height="30" Width="90" Background="{DynamicResource {x:Static SystemColors.ActiveCaptionBrushKey}}" FontSize="16" BorderBrush="Transparent">
+                <MenuItem Header="Open deposit" Click="OpenDepositButtonBase_OnClick"></MenuItem>
+                <MenuItem Header="Issue credit" Click="IssueCreditButtonBase_OnClick"></MenuItem>
+                <MenuItem Header="Transfer money" Click="TransferMoneyButtonBase_OnClick"></MenuItem>
+            </MenuItem>
+            <MenuItem Header="Client" Height="30" Width="55" Background="{DynamicResource {x:Static SystemColors.ActiveCaptionBrushKey}}" FontSize="16" BorderBrush="Transparent">
+                <MenuItem Header="Add new client" Click="AddNewClientButtonBase_OnClick"></MenuItem>
+                <MenuItem Header="Remove client" Click="RemoveClientButton_OnClick"></MenuItem>
+            </MenuItem>
+        </Menu>
+
+    </Grid>
+</Window>
