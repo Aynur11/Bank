@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -25,7 +23,7 @@ namespace Homework_17.Windows
     public partial class MainWindow : Window
     {
         public BankProvider BankProv;
-        private readonly DbManager dbManager;
+        private readonly IBankManager bankManager;
         private DataRowView row;
         public MainWindow()
         {
@@ -51,14 +49,14 @@ namespace Homework_17.Windows
                 }));
             };
 
-            dbManager = new DbManager();
-            dbManager.OnDbConnection += (o, e) =>
+            bankManager = new DbManager();
+            bankManager.OnDbConnection += (o, e) =>
             {
                 LogsTextBlock.Text += $"{e.Time.ToShortTimeString()} {e.Message} {Environment.NewLine}";
             };
 
-            PhysicalPersonsDataGrid.DataContext = dbManager.ConnectPhysDataTable();
-            LegalPersonsDataGrid.DataContext = dbManager.ConnectLegalDataTable();
+            PhysicalPersonsDataGrid.DataContext = bankManager.ConnectPhysDataTable();
+            LegalPersonsDataGrid.DataContext = bankManager.ConnectLegalDataTable();
         }
 
         /// <summary>
@@ -68,30 +66,6 @@ namespace Homework_17.Windows
         /// <param name="e"></param>
         private void OpenDepositButtonBase_OnClick(object sender, RoutedEventArgs e)
         {
-            //ClientBase client;
-
-            //if (PhysicalTabItem.IsSelected && PhysicalPersonsDataGrid.SelectedItem is ClientBase)
-            //{
-            //    client = PhysicalPersonsDataGrid.SelectedItem as ClientBase;
-
-            //}
-            //else if (LegalTabItem.IsSelected && LegalPersonsDataGrid.SelectedItem is ClientBase)
-            //{
-            //    client = LegalPersonsDataGrid.SelectedItem as ClientBase;
-            //}
-            //else
-            //{
-            //    MessageBox.Show("Выберите нужного клиента!");
-            //    return;
-            //}
-
-            //OpenDepositOrCreditWindow openDepositOrCreditWindow = new OpenDepositOrCreditWindow();
-            //if (openDepositOrCreditWindow.ShowDialog() == true)
-            //{
-            //    client.OpenDeposit(openDepositOrCreditWindow.Sum, openDepositOrCreditWindow.Period, openDepositOrCreditWindow.CapitalizationCheckBox.IsEnabled);
-            //}
-
-
             if (PhysicalTabItem.IsSelected && PhysicalPersonsDataGrid.CurrentItem != null)
             {
                 row = (DataRowView)PhysicalPersonsDataGrid.SelectedItem;
@@ -105,6 +79,7 @@ namespace Homework_17.Windows
                 MessageBox.Show("Выберите нужного клиента!");
                 return;
             }
+
             OpenDepositOrCreditWindow openDepositOrCreditWindow = new OpenDepositOrCreditWindow();
             if (openDepositOrCreditWindow.ShowDialog() == true)
             {
@@ -123,18 +98,18 @@ namespace Homework_17.Windows
                 }
 
                 // Костыль для инициализации таблицы.
-                dbManager.GetDepositsTable();
+                bankManager.GetDepositsTable();
 
-                DataRow dataRow = dbManager.DepositsDataTable.NewRow();
+                DataRow dataRow = bankManager.DepositsDataTable.NewRow();
                 dataRow["ClientId"] = Int32.Parse(row["Id"].ToString());
                 dataRow["Sum"] = openDepositOrCreditWindow.Sum;
                 dataRow["Rate"] = bool.Parse(row["Vip"].ToString()) ? 0.3 : 0.2;
                 dataRow["Period"] = openDepositOrCreditWindow.Period;
                 dataRow["Capitalization"] = openDepositOrCreditWindow.CapitalizationCheckBox.IsEnabled;
-                dbManager.DepositsDataTable.Rows.Add(dataRow);
-                dbManager.DepositsSqlDataAdapter.Update(dbManager.DepositsDataTable);
+                bankManager.DepositsDataTable.Rows.Add(dataRow);
+                bankManager.DepositsSqlDataAdapter.SafelyUpdate(bankManager.DepositsDataTable);
                 row["Sum"] = Int32.Parse(row["Sum"].ToString()) - openDepositOrCreditWindow.Sum;
-                dbManager.ClientsSqlDataAdapter.Update(dbManager.PhysDataTable);
+                bankManager.ClientsSqlDataAdapter.SafelyUpdate(bankManager.PhysDataTable);
             }
         }
 
@@ -144,42 +119,7 @@ namespace Homework_17.Windows
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void IssueCreditButtonBase_OnClick(object sender, RoutedEventArgs e)
-        {
-            //ClientBase client;
-
-            //if (PhysicalTabItem.IsSelected && PhysicalPersonsDataGrid.SelectedItem is ClientBase)
-            //{
-            //    client = PhysicalPersonsDataGrid.SelectedItem as ClientBase;
-
-            //}
-            //else if (LegalTabItem.IsSelected && LegalPersonsDataGrid.SelectedItem is ClientBase)
-            //{
-            //    client = LegalPersonsDataGrid.SelectedItem as ClientBase;
-            //}
-            //else
-            //{
-            //    MessageBox.Show("Выберите нужного клиента!");
-            //    return;
-            //}
-
-            //OpenDepositOrCreditWindow openDepositOrCreditWindow = new OpenDepositOrCreditWindow();
-            //openDepositOrCreditWindow.Title = "Данные для выдачи кредита";
-            //openDepositOrCreditWindow.CapitalizationCheckBox.IsEnabled = false;
-            //if (openDepositOrCreditWindow.ShowDialog() == true)
-            //{
-            //    client.IssueCredit(openDepositOrCreditWindow.Sum, openDepositOrCreditWindow.Period);
-            //    client.OnClientInstanceOperation += (o, args) =>
-            //    {
-            //        if (!client.Vip && client.Credits.Count > 1)
-            //        {
-            //            client.Vip = true;
-            //            client.CreditPercent -= 0.1;
-            //            client.DepositPercent += 0.3;
-            //            LogsTextBlock.Text += $"Клиент {client.Name} переведен на статус VIP" + Environment.NewLine;
-            //        }
-            //    };
-            //}
-
+        { 
             if (PhysicalTabItem.IsSelected && PhysicalPersonsDataGrid.CurrentItem != null)
             {
                 row = (DataRowView)PhysicalPersonsDataGrid.SelectedItem;
@@ -196,12 +136,21 @@ namespace Homework_17.Windows
 
             OpenDepositOrCreditWindow openDepositOrCreditWindow = new OpenDepositOrCreditWindow();
             openDepositOrCreditWindow.CapitalizationCheckBox.IsEnabled = false;
+
             if (openDepositOrCreditWindow.ShowDialog() == true)
             {
-                dbManager.IssueCredit(Int32.Parse(row["Id"].ToString()),
-                    openDepositOrCreditWindow.Sum,
-                    openDepositOrCreditWindow.Period);
-                //client.OpenDeposit(openDepositOrCreditWindow.Sum, openDepositOrCreditWindow.Period, openDepositOrCreditWindow.CapitalizationCheckBox.IsEnabled);
+                // Костыль для инициализации таблицы.
+                bankManager.GetCreditsTable();
+
+                DataRow dataRow = bankManager.CreditsDataTable.NewRow();
+                dataRow["ClientId"] = Int32.Parse(row["Id"].ToString());
+                dataRow["Sum"] = openDepositOrCreditWindow.Sum;
+                dataRow["Rate"] = bool.Parse(row["Vip"].ToString()) ? 0.5 : 0.3;
+                dataRow["Period"] = openDepositOrCreditWindow.Period;
+                bankManager.CreditsDataTable.Rows.Add(dataRow);
+                bankManager.CreditsSqlDataAdapter.SafelyUpdate(bankManager.CreditsDataTable);
+                row["Sum"] = Int32.Parse(row["Sum"].ToString()) - openDepositOrCreditWindow.Sum;
+                bankManager.ClientsSqlDataAdapter.SafelyUpdate(bankManager.CreditsDataTable);
             }
         }
 
@@ -404,38 +353,23 @@ namespace Homework_17.Windows
             if (clientNameWindow.ShowDialog() == true)
             {
                 DataRow dataRow = Convert.ToBoolean(clientNameWindow.IsLegalClientCheckBox.IsChecked) ?
-                    dbManager.LegalDataTable.NewRow() :
-                    dbManager.PhysDataTable.NewRow();
+                    bankManager.LegalDataTable.NewRow() :
+                    bankManager.PhysDataTable.NewRow();
                 dataRow["Name"] = clientNameWindow.NameTextBox.Text;
                 dataRow["Sum"] = clientNameWindow.Sum;
                 dataRow["Vip"] = Convert.ToBoolean(clientNameWindow.IsVipClientCheckBox.IsChecked);
                 dataRow["PhysicalPersonsDepartment"] = !Convert.ToBoolean(clientNameWindow.IsLegalClientCheckBox.IsChecked);
                 if (Convert.ToBoolean(clientNameWindow.IsLegalClientCheckBox.IsChecked))
                 {
-                    dbManager.LegalDataTable.Rows.Add(dataRow);
-                    dbManager.ClientsSqlDataAdapter.Update(dbManager.LegalDataTable);
+                    bankManager.LegalDataTable.Rows.Add(dataRow);
+                    bankManager.ClientsSqlDataAdapter.SafelyUpdate(bankManager.LegalDataTable);
                 }
                 else
                 {
-                    dbManager.PhysDataTable.Rows.Add(dataRow);
-                    dbManager.ClientsSqlDataAdapter.Update(dbManager.PhysDataTable);
+                    bankManager.PhysDataTable.Rows.Add(dataRow);
+                    bankManager.ClientsSqlDataAdapter.SafelyUpdate(bankManager.PhysDataTable);
                 }
             }
-
-            //ClientNameWindow clientNameWindow = new ClientNameWindow();
-            //clientNameWindow.IsVipClientCheckBox.IsEnabled = true;
-            //clientNameWindow.IsLegalClientCheckBox.IsEnabled = true;
-            //clientNameWindow.ClientNamesComboBox.IsEnabled = false;
-            //if (clientNameWindow.ShowDialog() == true)
-            //{
-            //    ClientBase client = Convert.ToBoolean(clientNameWindow.IsVipClientCheckBox.IsChecked) ?
-            //        (ClientBase)new VipClient(clientNameWindow.NameTextBox.Text) :
-            //        new Client(clientNameWindow.NameTextBox.Text);
-            //    client.Sum = clientNameWindow.Sum;
-
-            //    BankProv.BankObj.AddNewClient(client, !Convert.ToBoolean(clientNameWindow.IsLegalClientCheckBox.IsChecked));
-            //}
-
         }
 
         /// <summary>
@@ -464,7 +398,7 @@ namespace Homework_17.Windows
                 return;
             }
             row.EndEdit();
-            dbManager.ClientsSqlDataAdapter.Update(dbManager.PhysDataTable);
+            bankManager.ClientsSqlDataAdapter.SafelyUpdate(bankManager.PhysDataTable);
         }
 
         private void LegalPersonsDataGrid_OnCellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
@@ -483,7 +417,7 @@ namespace Homework_17.Windows
                 return;
             }
             row.EndEdit();
-            dbManager.ClientsSqlDataAdapter.Update(dbManager.LegalDataTable);
+            bankManager.ClientsSqlDataAdapter.SafelyUpdate(bankManager.LegalDataTable);
         }
 
         /// <summary>
@@ -493,44 +427,18 @@ namespace Homework_17.Windows
         /// <param name="e"></param>
         private void RemoveClientButton_OnClick(object sender, RoutedEventArgs e)
         {
-            //ClientBase client;
-
-            //if (PhysicalTabItem.IsSelected && PhysicalPersonsDataGrid.SelectedItem is ClientBase)
-            //{
-            //    client = PhysicalPersonsDataGrid.SelectedItem as ClientBase;
-
-            //}
-            //else if (LegalTabItem.IsSelected && LegalPersonsDataGrid.SelectedItem is ClientBase)
-            //{
-            //    client = LegalPersonsDataGrid.SelectedItem as ClientBase;
-            //}
-            //else
-            //{
-            //    MessageBox.Show("Выберите нужного клиента!");
-            //    return;
-            //}
-
-            //if (BankProv.BankObj.RemoveClient(client))
-            //{
-            //    MessageBox.Show("Клиент удален.");
-            //}
-            //else
-            //{
-            //    MessageBox.Show("Клиент не найден.");
-            //}
             if (PhysicalTabItem.IsSelected && PhysicalPersonsDataGrid.CurrentItem != null)
             {
                 row = (DataRowView)PhysicalPersonsDataGrid.SelectedItem;
                 row.Delete();
-                dbManager.ClientsSqlDataAdapter.Update(dbManager.PhysDataTable);
+                bankManager.ClientsSqlDataAdapter.SafelyUpdate(bankManager.PhysDataTable);
             }
             else if (LegalTabItem.IsSelected && LegalPersonsDataGrid.CurrentItem != null)
             {
                 row = (DataRowView)LegalPersonsDataGrid.SelectedItem;
                 row.Delete();
-                dbManager.ClientsSqlDataAdapter.Update(dbManager.LegalDataTable);
+                bankManager.ClientsSqlDataAdapter.SafelyUpdate(bankManager.LegalDataTable);
             }
-
         }
 
         /// <summary>
@@ -540,32 +448,6 @@ namespace Homework_17.Windows
         /// <param name="e"></param>
         private void TransferMoneyButtonBase_OnClick(object sender, RoutedEventArgs e)
         {
-            //ClientBase client;
-
-            //if (PhysicalTabItem.IsSelected && PhysicalPersonsDataGrid.SelectedItem is ClientBase)
-            //{
-            //    client = PhysicalPersonsDataGrid.SelectedItem as ClientBase;
-
-            //}
-            //else if (LegalTabItem.IsSelected && LegalPersonsDataGrid.SelectedItem is ClientBase)
-            //{
-            //    client = LegalPersonsDataGrid.SelectedItem as ClientBase;
-            //}
-            //else
-            //{
-            //    MessageBox.Show("Выберите нужного клиента!");
-            //    return;
-            //}
-
-            //ClientNameWindow clientNameWindow = new ClientNameWindow();
-            //clientNameWindow.ClientNamesComboBox.ItemsSource = BankProv.BankObj.GetAllClientsNamesWithId();
-            //clientNameWindow.NameTextBox.IsEnabled = false;
-            //if (clientNameWindow.ShowDialog() == true)
-            //{
-            //    //client?.TransferMoney(BankProv.BankObj.FindClient(clientNameWindow.ClientNamesComboBox.Text), clientNameWindow.Sum);
-            //    client?.TransferMoney(BankProv.BankObj.FindClientById(Convert.ToInt32(clientNameWindow.ClientNamesComboBox.Text.Split(':')[1])), clientNameWindow.Sum);
-            //}
-
             if (PhysicalTabItem.IsSelected && PhysicalPersonsDataGrid.CurrentItem != null)
             {
                 row = (DataRowView)PhysicalPersonsDataGrid.SelectedItem;
@@ -583,14 +465,14 @@ namespace Homework_17.Windows
 
             ClientNameWindow clientNameWindow = new ClientNameWindow
             {
-                ClientNamesComboBox = { ItemsSource = dbManager.GetAllClientNamesWithId() },
+                ClientNamesComboBox = { ItemsSource = bankManager.GetAllClientNamesWithId() },
                 NameTextBox = { IsEnabled = false }
             };
             if (clientNameWindow.ShowDialog() == true)
             {
                 Int32.TryParse(row[0].ToString(), out int currentClientId);
                 int purposeClientId = ((KeyValuePair<int, string>)clientNameWindow.ClientNamesComboBox.SelectedValue).Key;
-                dbManager.TransferMoney(currentClientId, purposeClientId, clientNameWindow.Sum);
+                bankManager.TransferMoney(currentClientId, purposeClientId, clientNameWindow.Sum);
             }
         }
     }

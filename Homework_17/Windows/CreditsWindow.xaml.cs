@@ -32,7 +32,7 @@ namespace Homework_17.Windows
             InitializeComponent();
             dbManager = new DbManager();
             CreditsGrid.DataContext = dbManager.GetCreditsTable();
-            DataTable gridTable = (DataTable)CreditsGrid.DataContext;
+            DataTable gridTable = (DataTable) CreditsGrid.DataContext;
             gridTable.DefaultView.RowFilter = $"ClientId = {clientId}";
         }
 
@@ -51,7 +51,7 @@ namespace Homework_17.Windows
                 return;
             }
             row.EndEdit();
-            dbManager.DepositsSqlDataAdapter.Update(dbManager.DepositsDataTable);
+            dbManager.DepositsSqlDataAdapter.SafelyUpdate(dbManager.DepositsDataTable);
         }
 
     }

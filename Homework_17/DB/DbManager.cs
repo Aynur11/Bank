@@ -12,7 +12,7 @@ using Homework_17.ClientFeatures;
 
 namespace Homework_17.DB
 {
-    public class DbManager
+    public class DbManager : IBankManager
     {
         public SqlDataAdapter ClientsSqlDataAdapter { get; set; }
         public SqlDataAdapter DepositsSqlDataAdapter { get; set; }
@@ -21,8 +21,6 @@ namespace Homework_17.DB
         public DataTable LegalDataTable { get; set; }
         public DataTable DepositsDataTable { get; set; }
         public DataTable CreditsDataTable { get; set; }
-        private readonly DataTable clientCreditsDataTable;
-        private readonly DataTable clientDepositsDataTable;
         private readonly SqlConnection commonSqlConnection;
         public DbManager()
         {
@@ -33,8 +31,6 @@ namespace Homework_17.DB
             LegalDataTable = new DataTable();
             DepositsDataTable = new DataTable();
             CreditsDataTable = new DataTable();
-            clientCreditsDataTable = new DataTable();
-            clientDepositsDataTable = new DataTable();
             var connectionStringBuilder = new SqlConnectionStringBuilder
             {
                 DataSource = @"(localdb)\MSSQLLocalDB",
@@ -46,7 +42,7 @@ namespace Homework_17.DB
             commonSqlConnection = new SqlConnection(connectionStringBuilder.ConnectionString);
 
         }
-        public delegate void DbConnectionHandler(object sender, DbConnectionEventArgs e);
+        //public delegate void DbConnectionHandler(object sender, DbConnectionEventArgs e);
 
         public event DbConnectionHandler OnDbConnection;
 
@@ -95,7 +91,7 @@ namespace Homework_17.DB
             DepositsSqlDataAdapter.UpdateCommand.Parameters.Add("@Period", SqlDbType.Int, 8, "Period");
             DepositsSqlDataAdapter.UpdateCommand.Parameters.Add("@Capitalization", SqlDbType.Bit, 4, "Capitalization");
 
-            DepositsSqlDataAdapter.Fill(DepositsDataTable);
+            DepositsSqlDataAdapter.SafelyFill(DepositsDataTable);
             return DepositsDataTable;
         }
 
@@ -117,7 +113,7 @@ namespace Homework_17.DB
             CreditsSqlDataAdapter.SelectCommand = new SqlCommand(sql, commonSqlConnection);
 
             // Insert.
-            sql = @"INSERT INTO Deposits (ClientId, Sum, Rate, Period)
+            sql = @"INSERT INTO Credits (ClientId, Sum, Rate, Period)
                            VALUES(@ClientId, @Sum, @Rate, @Period)
                            SET @Id = @@IDENTITY";
             CreditsSqlDataAdapter.InsertCommand = new SqlCommand(sql, commonSqlConnection);
@@ -128,7 +124,7 @@ namespace Homework_17.DB
             CreditsSqlDataAdapter.InsertCommand.Parameters.Add("@Period", SqlDbType.Int, 8, "Period");
 
             // Update.
-            sql = @"UPDATE Deposits SET
+            sql = @"UPDATE Credits SET
                     Sum = @Sum,
                     Rate = @Rate,
                     Period = @Period,
@@ -141,8 +137,8 @@ namespace Homework_17.DB
             CreditsSqlDataAdapter.UpdateCommand.Parameters.Add("@Rate", SqlDbType.Float, 4, "Rate");
             CreditsSqlDataAdapter.UpdateCommand.Parameters.Add("@Period", SqlDbType.Int, 8, "Period");
 
-            CreditsSqlDataAdapter.Fill(DepositsDataTable);
-            return DepositsDataTable;
+            CreditsSqlDataAdapter.SafelyFill(CreditsDataTable);
+            return CreditsDataTable;
         }
 
         /// <summary>
@@ -162,6 +158,52 @@ namespace Homework_17.DB
         {   
             return Prepare(LegalPersonsSql, LegalDataTable);
         }
+
+        /// <summary>
+        /// Возвращает словарь клиента виде имени и его идентифтикатора.
+        /// </summary>
+        /// <returns></returns>
+        public Dictionary<int, string> GetAllClientNamesWithId()
+        {
+            DataTable clientNamesDataTable = new DataTable();
+            string sql = @"SELECT 
+                           Clients.Id,
+                           Clients.Name
+                           FROM Clients";
+            ClientsSqlDataAdapter.SelectCommand = new SqlCommand(sql, commonSqlConnection);
+            ClientsSqlDataAdapter.SafelyFill(clientNamesDataTable);
+            return clientNamesDataTable
+                .AsEnumerable()
+                .ToDictionary(row => row.Field<int>("Id"), row => row.Field<string>("Name"))
+                .ToDictionary(x => x.Key, y => y.Value.Trim());
+        }
+
+        /// <summary>
+        /// Выполняет перевод денег другому клиенту.
+        /// </summary>
+        /// <param name="idFrom"></param>
+        /// <param name="idTo"></param>
+        /// <param name="sumToTransfer"></param>
+        public void TransferMoney(int idFrom, int idTo, double sumToTransfer)
+        {
+            double purposeClientSum = GetClientSum(idTo);
+            double currentClientSum = GetClientSum(idFrom);
+            if (sumToTransfer > currentClientSum)
+            {
+                MessageBox.Show("Недостаточно средств на счету!");
+                return;
+            }
+
+            if (idFrom == idTo)
+            {
+                MessageBox.Show("Попытка перевести средства самому себе!");
+                return;
+            }
+
+            UpdateClientSum(idTo, purposeClientSum + sumToTransfer);
+            UpdateClientSum(idFrom, currentClientSum - sumToTransfer);
+        }
+
         private DataView Prepare(string commonTableSql, DataTable table)
         {
             ClientsSqlDataAdapter.SelectCommand = new SqlCommand(commonTableSql, commonSqlConnection);
@@ -195,116 +237,8 @@ namespace Homework_17.DB
             ClientsSqlDataAdapter.DeleteCommand = new SqlCommand(sql, commonSqlConnection);
             ClientsSqlDataAdapter.DeleteCommand.Parameters.Add("@Id", SqlDbType.Int, 4, "Id");
 
-            ClientsSqlDataAdapter.Fill(table);
+            ClientsSqlDataAdapter.SafelyFill(table);
             return table.DefaultView;
-        }
-
-        /// <summary>
-        /// Возвращает словарь клиента виде Имени и его идентифтикатора.
-        /// </summary>
-        /// <returns></returns>
-        public Dictionary<int, string> GetAllClientNamesWithId()
-        {
-            DataTable clientNamesDataTable = new DataTable();
-            string sql = @"SELECT 
-                           Clients.Id,
-                           Clients.Name
-                           FROM Clients";
-            ClientsSqlDataAdapter.SelectCommand = new SqlCommand(sql, commonSqlConnection);
-            ClientsSqlDataAdapter.Fill(clientNamesDataTable);
-            return clientNamesDataTable
-                .AsEnumerable()
-                .ToDictionary(row => row.Field<int>("Id"), row => row.Field<string>("Name"))
-                .ToDictionary(x => x.Key, y => y.Value.Trim());
-        }
-
-        /// <summary>
-        /// Выполняет перевод денег другому клиенту.
-        /// </summary>
-        /// <param name="idFrom"></param>
-        /// <param name="idTo"></param>
-        /// <param name="sumToTransfer"></param>
-        public void TransferMoney(int idFrom, int idTo, double sumToTransfer)
-        {
-            double purposeClientSum = GetClientSum(idTo);
-            double currentClientSum = GetClientSum(idFrom);
-            if (sumToTransfer > currentClientSum)
-            {
-                MessageBox.Show("Недостаточно средств на счету!");
-                return;
-            }
-
-            if (idFrom == idTo)
-            {
-                MessageBox.Show("Попытка перевести средства самому себе!");
-                return;
-            }
-
-            UpdateClientSum(idTo, purposeClientSum + sumToTransfer);
-            UpdateClientSum(idFrom, currentClientSum - sumToTransfer);
-        }
-
-        /// <summary>
-        /// Открыть вклад.
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="sum"></param>
-        /// <param name="periodInMonth"></param>
-        /// <param name="withCapitalization"></param>
-        public void OpenDeposit(int id, double sum, int periodInMonth, bool withCapitalization)
-        {
-            string sql = @"SELECT
-                               Deposits.Id,
-                               Deposits.ClientId,
-                               Deposits.Sum,
-                               Deposits.Rate,
-                               Deposits.Period,
-                               Deposits.Capitalization
-                               FROM Deposits";
-
-            ClientsSqlDataAdapter.SelectCommand = new SqlCommand(sql, commonSqlConnection);
-            ClientsSqlDataAdapter.Fill(DepositsDataTable);
-
-            sql = $@"INSERT INTO Deposits (ClientId, Sum, Rate, Period, Capitalization)
-                    VALUES({id}, {sum}, 0,15, {periodInMonth}, {withCapitalization})
-                    SET @Id = @@IDENTITY";
-            ClientsSqlDataAdapter.InsertCommand = new SqlCommand(sql, commonSqlConnection);
-            //ClientsSqlDataAdapter.InsertCommand.Parameters.Add("@Id", SqlDbType.Int, 4, "Id").Direction = ParameterDirection.Output;
-            //ClientsSqlDataAdapter.InsertCommand.Parameters.Add("@ClientId", SqlDbType.Int, 4, "ClientId");
-            //ClientsSqlDataAdapter.InsertCommand.Parameters.Add("@Sum", SqlDbType.Float, 8, "Sum");
-            //ClientsSqlDataAdapter.InsertCommand.Parameters.Add("@Rate", SqlDbType.Float, 4, "Rate");
-            //ClientsSqlDataAdapter.InsertCommand.Parameters.Add("@Period", SqlDbType.Int, 4, "Period");
-            //ClientsSqlDataAdapter.InsertCommand.Parameters.Add("@Capitalization", SqlDbType.Bit, 4, "Capitalization");
-            ClientsSqlDataAdapter.Fill(DepositsDataTable);
-
-            //double rate = IsVip(id) ? 0.3 : 0.2;
-            //Debug.WriteLine(rate);
-            //string sql = $@"INSERT INTO Deposits (ClientId, Sum, Rate, Period, Capitalization)
-            //                VALUES({id}, {sum}, {rate.ToString(CultureInfo.InvariantCulture).Replace(",", ".")}, {periodInMonth}, '{withCapitalization}')";
-            //ExecuteSqlNonQuery(commonSqlConnection, new[] { sql });
-            //UpdateClientSum(id, GetClientSum(id) - sum);
-        }
-
-        /// <summary>
-        /// Выдать кредит.
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="sum"></param>
-        /// <param name="periodInMonth"></param>
-        public void IssueCredit(int id, double sum, int periodInMonth)
-        {
-            double rate = IsVip(id) ? 0.35 : 0.5;
-            string sql = $@"INSERT INTO Credits (ClientId, Sum, Rate, Period)
-                            VALUES({id}, {sum}, {rate.ToString(CultureInfo.InvariantCulture).Replace(",", ".")}, {periodInMonth})";
-            ExecuteSqlNonQuery(commonSqlConnection, new[] { sql });
-        }
-        private bool IsVip(int id)
-        {
-            string sql = $@"SELECT Clients.Vip FROM Clients WHERE Clients.Id = {id}";
-            ClientsSqlDataAdapter.SelectCommand = new SqlCommand(sql, commonSqlConnection);
-            DataTable table = new DataTable();
-            ClientsSqlDataAdapter.Fill(table);
-            return Boolean.Parse(table.Rows[0][0].ToString());
         }
 
         private void UpdateClientSum(int id, double sum)
@@ -314,7 +248,7 @@ namespace Homework_17.DB
                 if (Int32.Parse(row["Id"].ToString()) == id)
                 {
                     row["Sum"] = sum;
-                    ClientsSqlDataAdapter.Update(PhysDataTable);
+                    ClientsSqlDataAdapter.SafelyUpdate(PhysDataTable);
                     return;
                 }
             }
@@ -324,7 +258,7 @@ namespace Homework_17.DB
                 if (Int32.Parse(row["Id"].ToString()) == id)
                 {
                     row["Sum"] = sum;
-                    ClientsSqlDataAdapter.Update(LegalDataTable);
+                    ClientsSqlDataAdapter.SafelyUpdate(LegalDataTable);
                     return;
                 }
             }
@@ -338,47 +272,8 @@ namespace Homework_17.DB
                             FROM Clients
                             WHERE Clients.Id = {clientId}";
             ClientsSqlDataAdapter.SelectCommand = new SqlCommand(sql, commonSqlConnection);
-            ClientsSqlDataAdapter.Fill(clientSumDataTable);
+            ClientsSqlDataAdapter.SafelyFill(clientSumDataTable);
             return clientSumDataTable.Rows[0].Field<double>("Sum");
-        }
-        private DataView SelectAndFillTable(string sql, DataTable table)
-        {
-            ClientsSqlDataAdapter.SelectCommand = new SqlCommand(sql, commonSqlConnection);
-            ClientsSqlDataAdapter.Fill(table);
-            return table.DefaultView;
-        }
-
-        /// <summary>
-        /// SQL основной таблицы для физ лиц.
-        /// </summary>
-        private string DepositsSql(int clientId)
-        {
-            return $@"SELECT
-                      Clients.Id as 'ClientId',
-                      Clients.Name,
-                      Deposits.Id as 'DepositId',
-                      Deposits.Capitalization,
-                      Deposits.Rate,
-                      Deposits.Period,
-                      Deposits.Sum
-                      FROM Clients, Deposits
-                      WHERE Clients.Id = {clientId} and Clients.Id = Deposits.ClientId";
-        }
-
-        /// <summary>
-        /// SQL основной таблицы для физ лиц.
-        /// </summary>
-        private string CreditsSql(int clientId)
-        {
-            return $@"SELECT
-                      Clients.Id as 'ClientId',
-                      Clients.Name,
-                      Credits.Id as 'CreditId',
-                      Credits.Rate,
-                      Credits.Period,
-                      Credits.Sum
-                      FROM Clients, Credits
-                      WHERE Clients.Id = {clientId} and Clients.Id = Credits.ClientId";
         }
 
         /// <summary>
@@ -482,7 +377,15 @@ namespace Homework_17.DB
             foreach (string insertSql in sqls)
             {
                 var sqlCommand = new SqlCommand(insertSql, sqlConnection);
-                sqlCommand.ExecuteNonQuery();
+                try
+                {
+                    sqlCommand.ExecuteNonQuery();
+                }
+                catch (SqlException e)
+                {
+                    MessageBox.Show($"Произошла ошибка при выполнении запроса: {e.Message}");
+                    throw;
+                }
             }
             sqlConnection.Close();
         }

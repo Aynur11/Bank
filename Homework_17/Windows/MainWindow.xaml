@@ -26,13 +26,6 @@
                     </ContextMenu>
                 </TabItem.ContextMenu>
                 <Grid Background="#FFE5E5E5" Margin="0,0,0,-2">
-                    <!--<DataGrid
-                        x:Name="PhysicalPersonsDataGrid"
-                        IsReadOnly="False"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        ItemsSource="{Binding BankObj.PhysicalPersonsDepartment.Clients}" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
-                    </DataGrid>-->
                     <DataGrid x:Name="PhysicalPersonsDataGrid"
                               IsSynchronizedWithCurrentItem="True"
                               SelectionMode="Single"
@@ -80,14 +73,6 @@
                     </ContextMenu>
                 </TabItem.ContextMenu>
                 <Grid Background="#FFE5E5E5" Margin="0,0,-1,-1">
-                    <!--<DataGrid
-                        x:Name="LegalPersonsDataGrid"
-                        IsReadOnly="False"
-                        Grid.ColumnSpan="2"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        ItemsSource="{Binding BankObj.LegalPersonsDepartment.Clients}">
-                    </DataGrid>-->
                     <DataGrid x:Name="LegalPersonsDataGrid"
                               IsSynchronizedWithCurrentItem="True"
                               SelectionMode="Single"
