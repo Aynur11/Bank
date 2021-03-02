@@ -30,7 +30,15 @@ namespace Homework_17.Windows
             Title = $"All {name} deposits";
             InitializeComponent();
             dbManager = new DbManager();
-            DepositsGrid.DataContext = dbManager.GetDepositsTable();
+            try
+            {
+                DepositsGrid.DataContext = dbManager.GetDepositsTable();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show($"Не удалось обновить депозиты. {e.Message}");
+                Close();
+            }
             DataTable gridTable = (DataTable) DepositsGrid.DataContext;
             gridTable.DefaultView.RowFilter = $"ClientId = {clientId}";
         }

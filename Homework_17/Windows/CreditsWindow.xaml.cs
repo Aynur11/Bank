@@ -31,7 +31,15 @@ namespace Homework_17.Windows
             Title = $"All {name} credits";
             InitializeComponent();
             dbManager = new DbManager();
-            CreditsGrid.DataContext = dbManager.GetCreditsTable();
+            try
+            {
+                CreditsGrid.DataContext = dbManager.GetCreditsTable();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show($"Не удалось обновить кредиты. {e.Message}");
+                Close();
+            }
             DataTable gridTable = (DataTable) CreditsGrid.DataContext;
             gridTable.DefaultView.RowFilter = $"ClientId = {clientId}";
         }

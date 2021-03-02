@@ -22,10 +22,9 @@ namespace Homework_17.DB
             {
                 sqlDataAdapter.Fill(dataTable);
             }
-            catch (SqlException e)
+            catch (Exception e)
             {
-                MessageBox.Show($"При заполнении таблицы произошла ошибка: {e.Message}");
-                throw;
+                throw new Exception($"Возникла ошибка при заполнении таблицы из БД. Подробный текст ошибки {e.Message}", e);
             }
         }
 

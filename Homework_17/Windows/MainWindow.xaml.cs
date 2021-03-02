@@ -55,8 +55,26 @@ namespace Homework_17.Windows
                 LogsTextBlock.Text += $"{e.Time.ToShortTimeString()} {e.Message} {Environment.NewLine}";
             };
 
-            PhysicalPersonsDataGrid.DataContext = bankManager.ConnectPhysDataTable();
-            LegalPersonsDataGrid.DataContext = bankManager.ConnectLegalDataTable();
+
+            try
+            {
+                PhysicalPersonsDataGrid.DataContext = bankManager.ConnectPhysDataTable();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show($"Не удалось загрузить таблицу клиентов физических лиц. {e.Message}");
+                Close();
+            }
+
+            try
+            {
+                LegalPersonsDataGrid.DataContext = bankManager.ConnectLegalDataTable();
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show($"Не удалось загрузить таблицу клиентов юридических лиц. {e.Message}");
+                Close();
+            }
         }
 
         /// <summary>
@@ -107,9 +125,27 @@ namespace Homework_17.Windows
                 dataRow["Period"] = openDepositOrCreditWindow.Period;
                 dataRow["Capitalization"] = openDepositOrCreditWindow.CapitalizationCheckBox.IsEnabled;
                 bankManager.DepositsDataTable.Rows.Add(dataRow);
-                bankManager.DepositsSqlDataAdapter.SafelyUpdate(bankManager.DepositsDataTable);
+                try
+                {
+                    bankManager.DepositsSqlDataAdapter.SafelyUpdate(bankManager.DepositsDataTable);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Не удалось обновить таблицу депозитов. {ex.Message}");
+                    Close();
+                }
+
                 row["Sum"] = Int32.Parse(row["Sum"].ToString()) - openDepositOrCreditWindow.Sum;
-                bankManager.ClientsSqlDataAdapter.SafelyUpdate(bankManager.PhysDataTable);
+
+                try
+                {
+                    bankManager.ClientsSqlDataAdapter.SafelyUpdate(bankManager.PhysDataTable);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Не удалось обновить таблицу депозитов. {ex.Message}");
+                    Close();
+                }
             }
         }
 
@@ -119,7 +155,7 @@ namespace Homework_17.Windows
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void IssueCreditButtonBase_OnClick(object sender, RoutedEventArgs e)
-        { 
+        {
             if (PhysicalTabItem.IsSelected && PhysicalPersonsDataGrid.CurrentItem != null)
             {
                 row = (DataRowView)PhysicalPersonsDataGrid.SelectedItem;
@@ -148,9 +184,26 @@ namespace Homework_17.Windows
                 dataRow["Rate"] = bool.Parse(row["Vip"].ToString()) ? 0.5 : 0.3;
                 dataRow["Period"] = openDepositOrCreditWindow.Period;
                 bankManager.CreditsDataTable.Rows.Add(dataRow);
-                bankManager.CreditsSqlDataAdapter.SafelyUpdate(bankManager.CreditsDataTable);
+                try
+                {
+                    bankManager.CreditsSqlDataAdapter.SafelyUpdate(bankManager.CreditsDataTable);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Не удалось обновить таблицу кредитов. {ex.Message}");
+                    Close();
+                }
                 row["Sum"] = Int32.Parse(row["Sum"].ToString()) - openDepositOrCreditWindow.Sum;
-                bankManager.ClientsSqlDataAdapter.SafelyUpdate(bankManager.CreditsDataTable);
+
+                try
+                {
+                    bankManager.CreditsSqlDataAdapter.SafelyUpdate(bankManager.CreditsDataTable);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Не удалось обновить таблицу кредитов. {ex.Message}");
+                    Close();
+                }
             }
         }
 
